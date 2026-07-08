@@ -1,0 +1,62 @@
+while ($script:RunServer)
+{
+    $Context = $script:Listener.GetContext()
+
+    # ============================================
+    # LOGIN AUTHENTICATION
+    # ============================================
+    $AuthUser = "PCAudit"
+    $AuthPass = "PC_Audit"
+
+    $AuthHeader = $Context.Request.Headers["Authorization"]
+
+    if (-not $AuthHeader)
+    {
+        $Context.Response.StatusCode = 401
+        $Context.Response.AddHeader("WWW-Authenticate","Basic realm=`"PC Audit Dashboard`"")
+        $Context.Response.Close()
+        continue
+    }
+
+    try
+    {
+        $Encoded = $AuthHeader.Substring(6)
+        $Decoded = [System.Text.Encoding]::UTF8.GetString(
+            [Convert]::FromBase64String($Encoded)
+        )
+
+        $Parts = $Decoded.Split(":",2)
+
+        if ($Parts[0] -ne $AuthUser -or $Parts[1] -ne $AuthPass)
+        {
+            $Context.Response.StatusCode = 401
+            $Context.Response.AddHeader("WWW-Authenticate","Basic realm=`"PC Audit Dashboard`"")
+            $Context.Response.Close()
+            continue
+        }
+    }
+    catch
+    {
+        $Context.Response.StatusCode = 401
+        $Context.Response.AddHeader("WWW-Authenticate","Basic realm=`"PC Audit Dashboard`"")
+        $Context.Response.Close()
+        continue
+    }
+
+    # Existing code continues as normal
+    $Request  = $Context.Request
+    $Response = $Context.Response
+
+    $Path = $Request.Url.AbsolutePath
+
+    switch ($Path)
+    {
+        "/" {
+            # Dashboard HTML
+        }
+
+        "/details" {
+            # Details page
+        }
+    }
+}
